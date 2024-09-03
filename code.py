@@ -3,6 +3,7 @@ import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 import plotly.express as px
+import datetime as dt
 
 # Carga de datos
 data = pd.read_csv('logs_exp_us.csv', sep= '\t')
@@ -35,4 +36,19 @@ plt.close()
 fig = sns.boxplot(data, x = 'date')
 fig.tick_params(axis='x', labelrotation = 45)
 plt.close()
+
+# Excluir fechas con pocos datos
+
+data_filtered = data[data['date'] > dt.date(2019,7,31)]
+fig = sns.histplot(data_filtered, x = 'date')
+fig.tick_params(axis='x', labelrotation = 90)
+plt.close()
+
+# ¿Perdiste muchos eventos y usuarios al excluir los datos más antiguos?
+print('Una vez eliminados los registros con fechas antiguas se mantienen ' + str(len(data_filtered['event_name'])) + ' eventos.')
+# Se eliminaron alrededor de 3000 registros, valor cercano al 2% de los registros, no es significativo.
+
+# Asegúrate de tener usuarios y usuarias de los tres grupos experimentales.
+print(data_filtered.groupby('group').agg({'user_id' : 'count'}))
+
 
