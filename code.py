@@ -28,7 +28,11 @@ events_per_user = data.groupby('user_id').agg({'event_name': 'count'})
 print('El promedio de eventos por usuario es: '+ str(events_per_user['event_name'].mean().round(0)))
 
 print(data['date'].min(), data['date'].max())
-sns.histplot(data, x = 'date')
+plt.figure(figsize=(20,5))
+fig = sns.histplot(data, x = 'date')
+fig.tick_params(axis='x', labelrotation = 90)
 plt.close()
-sns.boxplot(data, x = 'date')
+fig = sns.boxplot(data, x = 'date')
+fig.tick_params(axis='x', labelrotation = 45)
 plt.close()
+
