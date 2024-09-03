@@ -51,4 +51,16 @@ print('Una vez eliminados los registros con fechas antiguas se mantienen ' + str
 # Asegúrate de tener usuarios y usuarias de los tres grupos experimentales.
 print(data_filtered.groupby('group').agg({'user_id' : 'count'}))
 
+#Paso 4. Estudiar el embudo de eventos
+#Observa qué eventos hay en los registros y su frecuencia de suceso. Ordénalos por frecuencia.
 
+events_frequency = data_filtered.groupby('event_name').agg({'user_id': 'count'}).sort_values('user_id', ascending = False).reset_index()
+events_frequency.columns = ['event_name', 'frequency']
+print(events_frequency)
+
+# Encuentra la cantidad de usuarios y usuarias que realizaron cada una de estas acciones. Ordena los eventos por el número de usuarios y usuarias. Calcula la proporción de usuarios y usuarias que realizaron la acción al menos una vez.
+events_frequency_by_user = data_filtered.groupby('event_name').agg({'user_id': 'nunique'}).sort_values('user_id', ascending = False).reset_index()
+print(events_frequency_by_user)
+
+# ¿En qué orden crees que ocurrieron las acciones? ¿Todas son parte de una sola secuencia? No es necesario tenerlas en cuenta al calcular el embudo.
+## MainScreenAppear -> OffersScreenAppear -> CartScreenAppear -> PaymentScreenSuccessful // El evento de tutorial influira en el flujo del proceso.
