@@ -4,11 +4,13 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 import plotly.express as px
 import datetime as dt
+from plotly import graph_objects as go
 
 # Carga de datos
 data = pd.read_csv('logs_exp_us.csv', sep= '\t')
 # Preparacion de datos
 data.columns = ['event_name', 'user_id', 'timestamp', 'group']
+data['user_id'] = data['user_id'].astype(str)
 data['timestamp'] = pd.to_datetime(data['timestamp'], unit= 's')
 data['date'] = data['timestamp'].dt.date
 data.info()
@@ -60,7 +62,31 @@ print(events_frequency)
 
 # Encuentra la cantidad de usuarios y usuarias que realizaron cada una de estas acciones. Ordena los eventos por el número de usuarios y usuarias. Calcula la proporción de usuarios y usuarias que realizaron la acción al menos una vez.
 events_frequency_by_user = data_filtered.groupby('event_name').agg({'user_id': 'nunique'}).sort_values('user_id', ascending = False).reset_index()
+events_frequency_by_user.columns = ['event_name', 'frequency']
 print(events_frequency_by_user)
 
 # ¿En qué orden crees que ocurrieron las acciones? ¿Todas son parte de una sola secuencia? No es necesario tenerlas en cuenta al calcular el embudo.
 ## MainScreenAppear -> OffersScreenAppear -> CartScreenAppear -> PaymentScreenSuccessful // El evento de tutorial influira en el flujo del proceso.
+
+
+# Utiliza el embudo de eventos para encontrar la proporción de usuarios y usuarias que pasan de una etapa a la siguiente. (Por ejemplo, para la secuencia de eventos A → B → C, calcula la proporción de usuarios en la etapa B a la cantidad de usuarios en la etapa A y la proporción de usuarios en la etapa C a la cantidad en la etapa B).
+
+event_data = pd.pivot_table(data_filtered, values='user_id', columns= 'event_name', aggfunc= lambda x: len(x.unique())).reset_index(drop= True)
+#group_data.columns = ['event_name', 'group_246', 'group_247', 'group_248']
+print(event_data)
+
+event_data['b_proportion'] = (event_data['OffersScreenAppear'] / event_data['MainScreenAppear'])*100
+event_data['c_proportion'] = (event_data['CartScreenAppear'] / event_data['OffersScreenAppear'])*100
+event_data['d_proportion'] = (event_data['PaymentScreenSuccessful'] / event_data['CartScreenAppear'])*100
+display(event_data)
+
+fig = go.Figure(go.Funnel(x = events_frequency_by_user['frequency'], y = events_frequency_by_user['event_name']))
+fig.show()
+
+# ¿En qué etapa pierdes más usuarios y usuarias?
+# Con el uso de un embudo en ploty, se observa que la mayor perdida se genera la pasar al evento 'OfferScreenAppear'
+
+# ¿Qué porcentaje de usuarios y usuarias hace todo el viaje desde su primer evento hasta el pago?
+event_data['total_process_proportion'] = (event_data['PaymentScreenSuccessful'] / event_data['MainScreenAppear'])*100
+print(event_data.iloc[:,-1:].round(2))
+# 'Del total de usuario, unicamente llega realizan todo el proceso el 47.7% de los usuarios.'
