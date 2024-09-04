@@ -5,6 +5,8 @@ from matplotlib import pyplot as plt
 import plotly.express as px
 import datetime as dt
 from plotly import graph_objects as go
+from scipy import stats as st
+import math as mth
 
 # Carga de datos
 data = pd.read_csv('logs_exp_us.csv', sep= '\t')
@@ -72,7 +74,6 @@ print(events_frequency_by_user)
 # Utiliza el embudo de eventos para encontrar la proporción de usuarios y usuarias que pasan de una etapa a la siguiente. (Por ejemplo, para la secuencia de eventos A → B → C, calcula la proporción de usuarios en la etapa B a la cantidad de usuarios en la etapa A y la proporción de usuarios en la etapa C a la cantidad en la etapa B).
 
 event_data = pd.pivot_table(data_filtered, values='user_id', columns= 'event_name', aggfunc= lambda x: len(x.unique())).reset_index(drop= True)
-#group_data.columns = ['event_name', 'group_246', 'group_247', 'group_248']
 print(event_data)
 
 event_data['b_proportion'] = (event_data['OffersScreenAppear'] / event_data['MainScreenAppear'])*100
@@ -90,3 +91,14 @@ fig.show()
 event_data['total_process_proportion'] = (event_data['PaymentScreenSuccessful'] / event_data['MainScreenAppear'])*100
 print(event_data.iloc[:,-1:].round(2))
 # 'Del total de usuario, unicamente llega realizan todo el proceso el 47.7% de los usuarios.'
+
+# Paso 5. Estudiar los resultados del experimento
+
+# ¿Cuántos usuarios y usuarias hay en cada grupo?
+group_data = pd.pivot_table(data_filtered, values='user_id', columns= 'group', aggfunc= lambda x: len(x.unique())).reset_index(drop= True)
+group_data.columns = ['group_246', 'group_247', 'group_248']
+print(group_data)
+
+# Tenemos dos grupos de control en el test A/A, donde comprobamos nuestros mecanismos y cálculos. Observa si hay una diferencia estadísticamente significativa entre las muestras 246 y 247.
+
+
