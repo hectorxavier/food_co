@@ -81,7 +81,7 @@ event_data['c_proportion'] = (event_data['CartScreenAppear'] / event_data['Offer
 event_data['d_proportion'] = (event_data['PaymentScreenSuccessful'] / event_data['CartScreenAppear'])*100
 display(event_data)
 
-fig = go.Figure(go.Funnel(x = events_frequency_by_user['frequency'], y = events_frequency_by_user['event_name']))
+fig = go.Figure(go.Funnel(x = events_frequency_by_user.iloc[:4,1], y = events_frequency_by_user.iloc[:4,0]))
 fig.show()
 
 # ¿En qué etapa pierdes más usuarios y usuarias?
@@ -101,4 +101,91 @@ print(group_data)
 
 # Tenemos dos grupos de control en el test A/A, donde comprobamos nuestros mecanismos y cálculos. Observa si hay una diferencia estadísticamente significativa entre las muestras 246 y 247.
 
+test_a_a =  pd.pivot_table(data_filtered, index = 'event_name', values='user_id', columns= 'group', aggfunc= lambda x: len(x.unique())).reset_index().drop(columns=248)
+test_a_a['variation'] = ((test_a_a[246] - test_a_a[247])/test_a_a[247])*100
+print(test_a_a)
 
+# Se realiza una comparación del número de usuarios entre los dos grupos de control, existe una variación superior al 1%, aun así se continuará con la prueba, pues se considera que el tamaño de las muestras en pequeño por lo que tolerar esta variación sería adecuado.
+#---------
+
+
+
+## Se aplicará una prueba de hipotesis para proporciones iguales
+events = data_filtered['event_name'].unique()
+
+for x in events:
+
+    alpha = 0.05 # Nivel de significancia
+
+    next_step = data_filtered[(~(data_filtered['group'] == 248)) & (data_filtered['event_name'] == x)].groupby('group').agg({'user_id' : pd.Series.nunique})
+
+    loads = data_filtered[(~(data_filtered['group'] == 248)) & (data_filtered['event_name'] == 'MainScreenAppear')].groupby('group').agg({'user_id' : pd.Series.nunique})
+
+    p1 = next_step.iloc[0]/loads.iloc[0] # Proporción compras exitosas grupo 246
+    p2 = next_step.iloc[1]/loads.iloc[1] # Proporción compras exitosas grupo 247
+    p_combined  = ((next_step.iloc[0] + next_step.iloc[1]) / (loads.iloc[0] + loads.iloc[1]))
+    difference = p1 - p2
+
+    z_value = difference / mth.sqrt(p_combined * (1 - p_combined) * ((1/loads.iloc[0].astype(float)) + (1/loads.iloc[1].astype(float)))) # Calculo valor Z
+    distr = st.norm(0, 1)
+    p_value = (1 - distr.cdf(abs(z_value))) * 2
+
+    if (p_value < alpha):
+        print("Para " + str(x) + ". Rechazar la hipótesis nula: hay una diferencia significativa entre las proporciones")
+    else:
+        print("Para " + str(x) + ". No se pudo rechazar la hipótesis nula: no hay razón para pensar que las proporciones son diferentes")
+
+## Se puede decir que no hay evidencia suficiente para asegurar que existe una diferencia estadíticamente significativa entre los grupos 246 y 247
+
+# Haz lo mismo para el grupo con fuentes alteradas. Compara los resultados con los de cada uno de los grupos de control para cada evento de forma aislada. Compara los resultados con los resultados combinados de los grupos de control. ¿Qué conclusiones puedes sacar del experimento?
+## con el grupo 246
+
+for x in events:
+
+    alpha = 0.1 # Nivel de significancia
+
+    next_step = data_filtered[(~(data_filtered['group'] == 247)) & (data_filtered['event_name'] == x)].groupby('group').agg({'user_id' : pd.Series.nunique})
+
+    loads = data_filtered[(~(data_filtered['group'] == 247)) & (data_filtered['event_name'] == 'MainScreenAppear')].groupby('group').agg({'user_id' : pd.Series.nunique})
+
+    p1 = next_step.iloc[0]/loads.iloc[0] # Proporción compras exitosas grupo 246
+    p2 = next_step.iloc[1]/loads.iloc[1] # Proporción compras exitosas grupo 247
+    p_combined  = ((next_step.iloc[0] + next_step.iloc[1]) / (loads.iloc[0] + loads.iloc[1]))
+    difference = p1 - p2
+
+    z_value = difference / mth.sqrt(p_combined * (1 - p_combined) * ((1/loads.iloc[0].astype(float)) + (1/loads.iloc[1].astype(float)))) # Calculo valor Z
+    distr = st.norm(0, 1)
+    p_value = (1 - distr.cdf(abs(z_value))) * 2
+
+    if (p_value < alpha):
+        print("Para " + str(x) + ". Rechazar la hipótesis nula: hay una diferencia significativa entre las proporciones")
+    else:
+        print("Para " + str(x) + ". No se pudo rechazar la hipótesis nula: no hay razón para pensar que las proporciones son diferentes")
+
+# con el grupo 247
+## con el grupo 246
+
+for x in events:
+
+    alpha = 0.1 # Nivel de significancia
+
+    next_step = data_filtered[(~(data_filtered['group'] == 246)) & (data_filtered['event_name'] == x)].groupby('group').agg({'user_id' : pd.Series.nunique})
+
+    loads = data_filtered[(~(data_filtered['group'] == 246)) & (data_filtered['event_name'] == 'MainScreenAppear')].groupby('group').agg({'user_id' : pd.Series.nunique})
+
+    p1 = next_step.iloc[0]/loads.iloc[0] # Proporción compras exitosas grupo 246
+    p2 = next_step.iloc[1]/loads.iloc[1] # Proporción compras exitosas grupo 247
+    p_combined  = ((next_step.iloc[0] + next_step.iloc[1]) / (loads.iloc[0] + loads.iloc[1]))
+    difference = p1 - p2
+
+    z_value = difference / mth.sqrt(p_combined * (1 - p_combined) * ((1/loads.iloc[0].astype(float)) + (1/loads.iloc[1].astype(float)))) # Calculo valor Z
+    distr = st.norm(0, 1)
+    p_value = (1 - distr.cdf(abs(z_value))) * 2
+
+    if (p_value < alpha):
+        print("Para " + str(x) + ". Rechazar la hipótesis nula: hay una diferencia significativa entre las proporciones")
+    else:
+        print("Para " + str(x) + ". No se pudo rechazar la hipótesis nula: no hay razón para pensar que las proporciones son diferentes")
+
+#group_246 = data_filtered[data_filtered['group'] == '246']
+#group_247 = data_filtered[data_filtered['group'] == '247']
